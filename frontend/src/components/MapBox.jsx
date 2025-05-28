@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Map, MapStyle, config, coordinates } from "@maptiler/sdk";
 import "@maptiler/sdk/dist/maptiler-sdk.css";
+import { LngLatBounds } from "@maptiler/sdk";
 import axios from "axios";
 
 config.apiKey = "rAlinUdEto5rsHqbmz2r";
@@ -83,6 +84,19 @@ function MapBox() {
             "line-color": "#3b82f6",
             "line-width": 4,
           },
+        });
+        // gets route coordinates
+        const coords = geojson.features[0].geometry.coordinates;
+        //creates bounds object starting with first point
+        const bounds = new LngLatBounds(coords[0], coords[0]);
+        // extends bounds to include every coordinate in the route
+        coords.forEach((coord) => bounds.extend(coord));
+
+        // fits map to match current bounds
+        map.current.fitBounds(bounds, {
+          padding: 40,
+          maxZoom: 15,
+          duration: 1000,
         });
       }
     } catch (err) {
