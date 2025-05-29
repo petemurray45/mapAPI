@@ -4,7 +4,7 @@ import "@maptiler/sdk/dist/maptiler-sdk.css";
 import { LngLatBounds } from "@maptiler/sdk";
 import axios from "axios";
 
-config.apiKey = "rAlinUdEto5rsHqbmz2r";
+const apiKey = "rAlinUdEto5rsHqbmz2r";
 const orsKey = "5b3ce3597851110001cf6248700ff0f5dafb4899802385a794920dcb";
 
 function MapBox() {
@@ -12,21 +12,17 @@ function MapBox() {
   const map = useRef(null);
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
+  const [originSuggestions, setOriginSuggestions] = useState([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [originFocused, setOriginFocused] = useState(false);
   const belfast = {
     lng: -5.9301,
     lat: 54.5973,
   };
   const zoom = 13;
+  config.apiKey = apiKey;
 
-  useEffect(() => {
-    const testGeocode = async () => {
-      const url = `https://api.openrouteservice.org/geocode/search?api_key=${orsKey}&text=Belfast City Hall&size=1`;
-      const res = await axios.get(url);
-      console.log("Testing geocode response", res.data);
-    };
-    testGeocode();
-  }, []);
-
+  // creates the map on the webpage
   useEffect(() => {
     if (!map.current) {
       console.log("creating map....");
@@ -36,11 +32,42 @@ function MapBox() {
         center: [belfast.lng, belfast.lat],
         zoom: zoom,
       });
-    }
+    } // coords for begining location on the displayed map
   }, [belfast.lng, belfast.lat, zoom]);
 
+  // function that fetches suggestions for dropdown menu
+
+  const fetchSuggestions = async (text, type = "origin") => {
+    if (!text) {
+      type === "origin"
+        ? setOriginSuggestions([])
+        : setDestinationSuggestions([]);
+      return;
+    }
+    try {
+      const res = await axios.get(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          text
+        )}.json?key=${apiKey}`
+      );
+
+      const suggestions = res.data.features.map((f) => ({
+        name: f.place_name,
+        coords: f.geometry.coordinates,
+      }));
+      console.log("Fetched suggestions", suggestions);
+
+      if (type === origin) setOriginSuggestions(suggestions);
+      else setDestinationSuggestions(suggestions);
+    } catch (err) {
+      console.log("Something went wrong in fetchSuggestions function", err);
+    }
+  };
+
+  // function that displays route to destination
   const handleRoute = async () => {
     try {
+      // gets start and end coords from geocode function
       const originCoords = await geoCode(origin);
       const destinationCoords = await geoCode(destination);
 
@@ -104,10 +131,11 @@ function MapBox() {
     }
   };
 
+  // function that gets coordinates for selected origin and destination
   const geoCode = async (text) => {
-    const url = `https://api.openrouteservice.org/geocode/search?api_key=${orsKey}&text=${encodeURIComponent(
+    const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(
       text
-    )}&size=1`;
+    )}.json?key=${apiKey}`;
 
     try {
       const res = await axios.get(url);
@@ -145,12 +173,37 @@ function MapBox() {
             </div>
             <div>
               <label className="label font-semibold">Origin Location</label>
-              <input
-                type="text"
-                placeholder="Enter origin"
-                className="input input-bordered w-full mt-1"
-                onChange={(e) => setOrigin(e.target.value)}
-              />
+              <div className="relative m-h-[200px]">
+                <input
+                  type="text"
+                  placeholder="Enter origin"
+                  className="input input-bordered w-full mt-1"
+                  onFocus={() => setOriginFocused(true)}
+                  onBlur={() => setTimeout(() => setOriginFocused(false), 150)} // small delay so click works
+                  onChange={(e) => {
+                    setOrigin(e.target.value);
+                    fetchSuggestions(e.target.value, "origin");
+                  }}
+                  value={origin}
+                />
+                {true && (
+                  <ul className="absolute dropdown-content z-10 menu bg-white p-2 shadow-md rounded-box w-full mt-1 max-h-48 overflow-y-auto">
+                    {originSuggestions.map((s, index) => (
+                      <li key={index}>
+                        <button
+                          onClick={() => {
+                            setOrigin(s.name);
+                            setOriginSuggestions([]);
+                          }}
+                          className="text-left w-full"
+                        >
+                          {s.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <div>
