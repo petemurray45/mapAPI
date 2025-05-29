@@ -5,7 +5,6 @@ import { LngLatBounds } from "@maptiler/sdk";
 import axios from "axios";
 
 const apiKey = import.meta.env.VITE_MAP_TILER_API_KEY;
-const orsKey = "5b3ce3597851110001cf6248700ff0f5dafb4899802385a794920dcb";
 
 function MapBox() {
   const mapContainer = useRef(null);
