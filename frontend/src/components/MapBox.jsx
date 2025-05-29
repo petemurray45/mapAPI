@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Map, MapStyle, config, coordinates } from "@maptiler/sdk";
+import { Map, MapStyle, config } from "@maptiler/sdk";
 import "@maptiler/sdk/dist/maptiler-sdk.css";
 import { LngLatBounds } from "@maptiler/sdk";
 import axios from "axios";
 
-const apiKey = "rAlinUdEto5rsHqbmz2r";
+const apiKey = import.meta.env.VITE_MAP_TILER_API_KEY;
 const orsKey = "5b3ce3597851110001cf6248700ff0f5dafb4899802385a794920dcb";
 
 function MapBox() {
